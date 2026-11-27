@@ -1,0 +1,28 @@
+# Build output
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa]rm64/
+publish/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.rsuser
+*.userprefs
+
+# Rider / VS Code
+.idea/
+.vscode/
+
+# Claude conversation logs
+.claude.conv.*
+
+# Never commit (global rule)
+requirements.txt
+/visit_folders.png
+/choose_disk_drive.png

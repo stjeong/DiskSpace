@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <RootNamespace>DiskSpace</RootNamespace>
+    <AssemblyName>DiskSpace</AssemblyName>
+    <Product>DiskSpace</Product>
+    <Version>1.0.0</Version>
+    <ApplicationIcon>app.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Embedded so forms can load every size (16px title bar, 32px+ taskbar/Alt+Tab). -->
+    <EmbeddedResource Include="app.ico" LogicalName="DiskSpace.app.ico" />
+  </ItemGroup>
+
+</Project>
