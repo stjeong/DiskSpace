@@ -64,6 +64,8 @@ public sealed class MainForm : Form
         fileMenu.DropDownItems.Add(new ToolStripSeparator());
         fileMenu.DropDownItems.Add(emptyBinMenuItem);
         fileMenu.DropDownItems.Add(new ToolStripSeparator());
+        fileMenu.DropDownItems.Add(new ToolStripMenuItem("최신 버전 업데이트(&U)...", null, (_, _) => CheckForUpdates()));
+        fileMenu.DropDownItems.Add(new ToolStripSeparator());
         fileMenu.DropDownItems.Add(new ToolStripMenuItem("끝내기(&X)", null, (_, _) => Close()));
         var viewMenu = new ToolStripMenuItem("보기(&V)");
         viewMenu.DropDownItems.Add(new ToolStripMenuItem("뒤로", null, (_, _) => GoBack(), Keys.Alt | Keys.Left));
@@ -232,6 +234,15 @@ public sealed class MainForm : Form
         }
 
         Rescan();
+    }
+
+    /// <summary>Checks GitHub for a newer release and installs it; the app exits when an update was started.</summary>
+    private void CheckForUpdates()
+    {
+        // The zip update restarts the app: let it scan the same path again.
+        string[] restartArgs = scanner is null ? [] : [scanner.RootPath];
+        if (UpdateDialog.Run(this, restartArgs))
+            Close();
     }
 
     private void NewScan()

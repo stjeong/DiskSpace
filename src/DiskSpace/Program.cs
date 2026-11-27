@@ -6,6 +6,7 @@ internal static class Program
     private static void Main(string[] args)
     {
         ApplicationConfiguration.Initialize();
+        Updater.CleanupAfterUpdate(); // removes the previous exe left by a self-update
 
         string? path = args.Length > 0 ? args[0] : null;
         if (string.IsNullOrWhiteSpace(path))

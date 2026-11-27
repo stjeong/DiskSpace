@@ -68,6 +68,18 @@ internal static class NativeMethods
     [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
     private static extern int SHEmptyRecycleBin(IntPtr hwnd, string? pszRootPath, uint dwFlags);
 
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode)]
+    private static extern int GetCurrentPackageFullName(ref int packageFullNameLength, IntPtr packageFullName);
+
+    private const int APPMODEL_ERROR_NO_PACKAGE = 15700;
+
+    /// <summary>True when the app runs from an installed MSIX package.</summary>
+    public static bool IsPackaged()
+    {
+        int length = 0;
+        return GetCurrentPackageFullName(ref length, IntPtr.Zero) != APPMODEL_ERROR_NO_PACKAGE;
+    }
+
     private const uint SHERB_NOCONFIRMATION = 0x00000001;
 
     /// <summary>Total size and item count of the Recycle Bin on all drives.</summary>
