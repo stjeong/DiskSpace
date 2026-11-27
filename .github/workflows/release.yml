@@ -1,0 +1,59 @@
+name: Release
+
+# - Push a tag like v1.2.3  -> builds the packages and publishes them as GitHub release "v1.2.3".
+# - Run manually (Actions tab) -> builds the packages as workflow artifacts only (version from the csproj).
+#
+# MSIX signing: set the repository secrets MSIX_CERTIFICATE (base64 of a .pfx) and
+# MSIX_CERTIFICATE_PASSWORD. Without them a self-signed certificate is generated per run and its
+# .cer is attached to the release (users must trust it before installing the MSIX).
+
+on:
+  push:
+    tags: ['v*.*.*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Build zip and MSIX packages
+        shell: pwsh
+        env:
+          MSIX_CERTIFICATE: ${{ secrets.MSIX_CERTIFICATE }}
+          MSIX_CERTIFICATE_PASSWORD: ${{ secrets.MSIX_CERTIFICATE_PASSWORD }}
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          $p = @{ OutDir = 'artifacts'; PublisherDisplayName = $env:OWNER }
+          if ($env:GITHUB_REF_TYPE -eq 'tag') { $p.Version = $env:GITHUB_REF_NAME -replace '^v', '' }
+          if ($env:MSIX_CERTIFICATE) {
+            $pfx = Join-Path $env:RUNNER_TEMP 'msix.pfx'
+            [IO.File]::WriteAllBytes($pfx, [Convert]::FromBase64String($env:MSIX_CERTIFICATE))
+            $p.CertificatePath = $pfx
+            $p.CertificatePassword = $env:MSIX_CERTIFICATE_PASSWORD
+            $p.TimestampUrl = 'http://timestamp.digicert.com'
+          }
+          ./tools/build-release.ps1 @p
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: DiskSpace-packages
+          path: artifacts/*
+          if-no-files-found: error
+
+      - name: Publish GitHub release
+        if: github.ref_type == 'tag'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $files = (Get-ChildItem artifacts -File).FullName
+          gh release create $env:GITHUB_REF_NAME @files --title "DiskSpace $env:GITHUB_REF_NAME" --generate-notes

@@ -26,3 +26,6 @@ publish/
 requirements.txt
 /visit_folders.png
 /choose_disk_drive.png
+
+# Release build output
+artifacts/

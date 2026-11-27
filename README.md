@@ -27,7 +27,7 @@
 - 64 KB 미만의 작은 파일과 폴더당 상위 256개를 넘는 파일은 `[N files]` 하나로 묶어 메모리 사용량을 줄입니다.
 
 ### 진행 상황 표시
-- 제목 표시줄에 `DiskSpace - [C:\] - full scan 42%` 형식으로 진행률을 표시합니다.
+- 제목 표시줄에 `DiskSpace - [C:] - full scan 42%` 형식으로 진행률을 표시합니다.
   - 드라이브 전체를 스캔할 때는 드라이브의 사용 용량 대비 지금까지 찾은 용량으로 계산합니다.
   - 일반 폴더를 스캔할 때는 찾은 폴더 수 대비 탐색을 마친 폴더 수로 계산합니다.
 - 상태 표시줄에 상태(스캔 중 / 완료 / 취소됨), 탐색한 폴더 수 / 찾은 폴더 수, 파일 수, 전체 크기, 스레드 수, 경과 시간과 진행 막대가 표시됩니다.
@@ -83,6 +83,59 @@ dotnet run --project src/DiskSpace
 
 Visual Studio에서는 `DiskSpace.sln`을 열고 `F5`로 실행합니다.
 
+## 설치
+
+[Releases](../../releases) 페이지에서 다음 중 하나를 받습니다. 모두 .NET 런타임이 포함되어 있어 따로 설치할 필요가 없습니다.
+
+- **zip**: `DiskSpace-<버전>-win-x64.zip` (ARM PC는 `win-arm64`). 압축을 풀고 `DiskSpace.exe`를 실행합니다.
+- **MSIX**: `DiskSpace-<버전>-win-x64.msix`. 더블클릭해서 설치합니다.
+  릴리스에 `DiskSpace-<버전>.cer`가 함께 있으면 자체 서명 패키지이므로, 설치 전에 관리자 PowerShell에서 인증서를 신뢰해야 합니다.
+
+  ```powershell
+  Import-Certificate -FilePath DiskSpace-1.0.0.cer -CertStoreLocation Cert:\LocalMachine\TrustedPeople
+  ```
+
+## 릴리스 만들기
+
+`.github/workflows/release.yml`이 `windows-latest`에서 `tools/build-release.ps1`을 실행해 x64/arm64용 zip과 MSIX를 만듭니다.
+
+- **태그 푸시** (`v1.2.3` 형식): 태그의 버전으로 빌드하고 GitHub Release를 만들어 파일을 첨부합니다.
+
+  ```powershell
+  git tag v1.0.0
+  git push origin v1.0.0
+  ```
+
+- **수동 실행** (Actions 탭 → Release → Run workflow): csproj의 `<Version>`으로 빌드하고 워크플로 아티팩트로만 올립니다.
+
+로컬에서도 같은 스크립트로 만들 수 있습니다(Windows SDK 필요). 결과는 `artifacts/`에 생깁니다.
+
+```powershell
+./tools/build-release.ps1
+```
+
+### MSIX 서명 인증서
+
+MSIX의 Publisher는 서명 인증서의 Subject에서 가져옵니다. 저장소 Secrets에 인증서가 없으면 실행할 때마다 새 자체 서명 인증서를 만들고, 그 `.cer`를 릴리스에 첨부합니다.
+버전마다 같은 인증서로 서명하려면 다음 Secrets를 등록하세요.
+
+| Secret | 내용 |
+| --- | --- |
+| `MSIX_CERTIFICATE` | `.pfx` 파일의 base64 문자열 |
+| `MSIX_CERTIFICATE_PASSWORD` | `.pfx` 암호 |
+
+자체 서명 인증서를 한 번 만들어 등록하는 예:
+
+```powershell
+$cert = New-SelfSignedCertificate -Type Custom -Subject 'CN=DiskSpace' -KeyUsage DigitalSignature `
+    -CertStoreLocation Cert:\CurrentUser\My -NotAfter (Get-Date).AddYears(5) `
+    -TextExtension @('2.5.29.37={text}1.3.6.1.5.5.7.3.3', '2.5.29.19={text}')
+$pfxPassword = Read-Host -AsSecureString 'PFX password'
+Export-PfxCertificate -Cert $cert -FilePath DiskSpace.pfx -Password $pfxPassword
+[Convert]::ToBase64String([IO.File]::ReadAllBytes('DiskSpace.pfx')) | gh secret set MSIX_CERTIFICATE
+gh secret set MSIX_CERTIFICATE_PASSWORD   # 암호 입력
+```
+
 ## 프로젝트 구조
 
 ```
@@ -99,5 +152,8 @@ src/DiskSpace/
 ├── AppIcon.cs          내장된 앱 아이콘 로드
 └── app.ico             앱 아이콘
 tools/
-└── make_icon.ps1       app.ico를 생성하는 PowerShell 스크립트
+├── make_icon.ps1       app.ico를 생성하는 PowerShell 스크립트
+└── build-release.ps1   릴리스용 zip / MSIX 생성 스크립트
+.github/workflows/
+└── release.yml         릴리스 빌드 GitHub Actions 워크플로
 ```
