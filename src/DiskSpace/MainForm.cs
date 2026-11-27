@@ -7,6 +7,10 @@ public sealed class MainForm : Form
 {
     private const string AppName = "DiskSpace";
 
+    /// <summary>"DiskSpace 1.0.1": app name plus the csproj &lt;Version&gt; (major.minor.build).</summary>
+    private static readonly string AppTitle =
+        $"{AppName} {typeof(MainForm).Assembly.GetName().Version?.ToString(3)}".TrimEnd();
+
     private readonly TreemapView map = new();
     private readonly System.Windows.Forms.Timer timer = new() { Interval = 500 };
     private readonly ToolStripStatusLabel statusLabel = new() { Text = "Ready" };
@@ -41,7 +45,7 @@ public sealed class MainForm : Form
     {
         // PerMonitorV2: sizes are applied by hand from 96-DPI values (see ApplyDpi); WinForms rescales fonts.
         AutoScaleMode = AutoScaleMode.None;
-        Text = AppName;
+        Text = AppTitle;
         Icon = AppIcon.Value;
         StartPosition = FormStartPosition.CenterScreen;
         Size = Dpi.Scale(new Size(1280, 800), DeviceDpi); // no handle yet: DeviceDpi is the form's initial DPI
@@ -246,7 +250,7 @@ public sealed class MainForm : Form
         bool running = scanner.IsRunning;
 
         int percent = (int)(scanner.Progress * 100);
-        Text = $"{AppName} - [{scanner.RootPath}] - full scan {percent}%";
+        Text = $"{AppTitle} - [{scanner.RootPath}] - full scan {percent}%";
         progressBar.Value = Math.Clamp(percent, 0, 100);
 
         string state = running ? "스캔 중..." : scanner.IsCompleted ? "스캔 완료" : "스캔 취소됨";
